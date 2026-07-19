@@ -27,9 +27,7 @@ void *copy_source_to_4kbuffer(const u8 *path) {
         if (source_file == -1) {
             perror("File Open Failed");
         }
-        for (size_t i = 0; i < file_size; i++) {
-            read(source_file, buffer, 4096);
-        }
+        read(source_file, buffer, 4096);
         close(source_file);
         return buffer;
     }
