@@ -21,15 +21,15 @@ off_t get_file_size_in_bytes(const i8 *path) {
     file_length = lseek(file_descriptor, 0, SEEK_END);
     if (file_length < 0) { goto cleanup; }
     cleanup:
-    i32 file_close_status = close(file_descriptor);
-    if (file_close_status < 0) { goto cleanup; }
-    (void)file_close_status;
+        i32 file_close_status = close(file_descriptor);
+        if (file_close_status < 0) { goto cleanup; }
+        (void)file_close_status;
     return file_length;
 }
 
 block_t *create_block(void) {
     block_t *block = malloc(sizeof(block_t));
-    if (!block) { goto cleanup; }
+    if (!block) { return NULL; }
     for (u32 i = 0; i < BUFFER_SIZE - 1; i++) {
         *((block->buffer) + i) = 0;
     }
@@ -37,8 +37,6 @@ block_t *create_block(void) {
     block->next = NULL;
     block->previous = NULL;
     block->count = 0;
-    cleanup:
-        free(block);
     return block;
 }
 
