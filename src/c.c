@@ -82,11 +82,20 @@ void dump_data(block_t *list) {
     dump_data(list->next);
 }
 
+void free_list(block_t *list) {
+    block_t *temporary_pointer = list;
+    if (!(list->next)) { return; }
+    free(list);
+    free_list(temporary_pointer->next);
+}
+
 i32 main(i32 argc, i8 **argv) {
     u32 filesize = get_file_size_in_bytes("src/c.c");
     block_t *linked_list = chunk_memory(filesize);
     block_t * writtenlist = linked_list_source_file("src/c.c");
     dump_data(writtenlist);
+    free_list(linked_list);
+    free_list(writtenlist);
     printf("%d", filesize);
     return 0;
 }
