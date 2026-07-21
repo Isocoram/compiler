@@ -36,9 +36,9 @@ block_t *create_block(void) {
 }
 
 block_t *chunk_memory(u32 byte_count) {
-    u32 block_count = byte_count / BUFFER_SIZE;
+    u32 block_count = (byte_count + BUFFER_SIZE -1) / BUFFER_SIZE;
     block_t *tail = create_block();
-    block_t *head = create_block();
+    block_t *head = tail;
     for (u32 i = 0; i < block_count; i++) {
         block_t *new_block = create_block();
         if (!(head->next)) {
@@ -94,7 +94,7 @@ void dump_data(block_t *list) {
 
 void free_list(block_t *list) {
     block_t *temporary_pointer = list;
-    if (!(list->next)) { return; }
+    if (!(list->next)) { free(list); return; }
     free_list(temporary_pointer->next);
     free(list);
 }
