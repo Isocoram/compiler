@@ -17,13 +17,11 @@ typedef struct block {
 off_t get_file_size_in_bytes(const i8 *path) {
     off_t file_length = 0;
     i32 file_descriptor = open(path, O_RDONLY);
-    if (file_descriptor < 0) { goto cleanup; }
+    if (file_descriptor < 0) { perror("File Open Error"); }
     file_length = lseek(file_descriptor, 0, SEEK_END);
-    if (file_length < 0) { goto cleanup; }
-    cleanup:
-        i32 file_close_status = close(file_descriptor);
-        if (file_close_status < 0) { goto cleanup; }
-        (void)file_close_status;
+    if (file_length < 0) { perror("File Length Error"); }
+    i32 file_close_status = close(file_descriptor);
+    if (file_close_status < 0) { perror("File Close Fail"); }
     return file_length;
 }
 
