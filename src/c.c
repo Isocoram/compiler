@@ -17,7 +17,7 @@ typedef struct block {
 off_t get_file_size_in_bytes(const i8 *path) {
     off_t file_length = 0;
     i32 file_descriptor = open(path, O_RDONLY);
-    if (file_descriptor < 0) { perror("File Open Error"); }
+    if (file_descriptor < 0) { perror("File Open Error"); return file_length; }
     file_length = lseek(file_descriptor, 0, SEEK_END);
     if (file_length < 0) { perror("File Length Error"); }
     i32 file_close_status = close(file_descriptor);
@@ -74,6 +74,7 @@ block_t *linked_list_source_file(const i8 *path) {
     block_t *tail = block_linked_list;
     i32 block_count = get_block_count(block_linked_list);
     for (u32 i = 0; i < (u32)block_count; i++) {
+
         lseek(file_descriptor, (BUFFER_SIZE - 1)*i, SEEK_SET);
         read(file_descriptor, tail->buffer, BUFFER_SIZE - 1);
         tail = tail->next;
