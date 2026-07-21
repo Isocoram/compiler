@@ -5,11 +5,13 @@
 
 #include "../include/types.h"
 
+#define BUFFER_SIZE 4096
+
 typedef struct block {
-    u8 *buffer;
+    u8 buffer[BUFFER_SIZE];
     struct block *next;
     struct block *previous;
-    u64 count;
+    u32 count;
 } block_t;
 
 off_t get_file_size_in_bytes(const u8 *path) {
@@ -20,7 +22,71 @@ off_t get_file_size_in_bytes(const u8 *path) {
     return file_length;
 }
 
+block_t *create_block(void) {
+    block_t *block = malloc(sizeof(block_t));
+    for (u32 i = 0; i < BUFFER_SIZE - 1; i++) {
+        *((block->buffer) + i) = 0;
+    }
+    *((block->buffer) + BUFFER_SIZE - 1) = '\0';
+    block->next = NULL;
+    block->previous = NULL;
+    block->count = 0;
+}
+
+block_t *chunk_memory(u32 byte_count) {
+    u32 block_count = byte_count / BUFFER_SIZE;
+    block_t *tail = create_block();
+    block_t *head = create_block();
+    for (u32 i = 0; i < block_count; i++) {
+        block_t *new_block = create_block();
+        if (!(head->next)) {
+            head->next = new_block;
+            tail = new_block;
+            new_block->previous = head;
+            new_block->count = new_block->previous->count + 1;
+        } else {
+            tail->next = new_block;
+            new_block->previous = tail;
+            tail = new_block;
+            new_block->count = new_block->previous->count + 1;
+        }
+    }
+    return head;
+}
+
+i32 get_block_count(block_t *list) {
+    i32 count = 0;
+    block_t *ptr = list;
+    if (!(ptr->next)) { return 1; }
+    while(ptr->next) { count++; ptr = ptr->next; }
+    return count;
+}
+
+block_t *linked_list_source_file(const u8 *path) {
+    i32 file_descriptor = open(path, O_RDONLY);
+    i32 file_size = get_file_size_in_bytes(path);
+    block_t *block_linked_list = chunk_memory(file_size);
+    block_t *tail = block_linked_list;
+    i32 block_count = get_block_count(block_linked_list);
+    for (u32 i = 0; i < block_count; i++) {
+        lseek(file_descriptor, (BUFFER_SIZE) * i, SEEK_SET);
+        read(file_descriptor, tail->buffer, BUFFER_SIZE - 1);
+        tail = tail->next;
+    }
+    return block_linked_list;
+}
+
+void dump_data(block_t *list) {
+    printf("Block Index: %d | Content: %s\n", list->count, list->buffer);
+    if (list->next == NULL) { return; }
+    dump_data(list->next);
+}
+
 i32 main(i32 argc, i8 **argv) {
-    printf("%s", copy_source_to_4kbuffer("src/c.c"));
+    u32 filesize = get_file_size_in_bytes("src/c.c");
+    block_t *linked_list = chunk_memory(filesize);
+    block_t * writtenlist = linked_list_source_file("src/c.c");
+    dump_data(writtenlist);
+    printf("%d", filesize);
     return 0;
 }
