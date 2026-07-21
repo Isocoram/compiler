@@ -55,7 +55,7 @@ block_t *chunk_memory(u32 byte_count) {
 }
 
 i32 get_block_count(block_t *list) {
-    i32 count = 0;
+    i32 count = 1;
     block_t *ptr = list;
     if (!(ptr->next)) { return 1; }
     while(ptr->next) { count++; ptr = ptr->next; }
@@ -69,15 +69,23 @@ block_t *linked_list_source_file(const u8 *path) {
     block_t *tail = block_linked_list;
     i32 block_count = get_block_count(block_linked_list);
     for (u32 i = 0; i < block_count; i++) {
-        lseek(file_descriptor, (BUFFER_SIZE) * i, SEEK_SET);
+        lseek(file_descriptor, (BUFFER_SIZE - 1)*i, SEEK_SET);
         read(file_descriptor, tail->buffer, BUFFER_SIZE - 1);
         tail = tail->next;
     }
     return block_linked_list;
 }
 
+block_t *block_by_index(block_t *list, u32 index) {
+    block_t *block_ptr = list;
+    while (block_ptr->count != index) {
+        block_ptr = block_ptr->next;
+    }
+    return block_ptr;
+}
+
 void dump_data(block_t *list) {
-    printf("Block Index: %d | Content: %s\n", list->count, list->buffer);
+    printf("Block Index: %d | Content: \n%s\n", list->count, list->buffer);
     if (list->next == NULL) { return; }
     dump_data(list->next);
 }
@@ -90,9 +98,11 @@ void free_list(block_t *list) {
 }
 
 i32 main(i32 argc, i8 **argv) {
-    u32 filesize = get_file_size_in_bytes("src/c.c");
+    u32 filesize = get_file_size_in_bytes(argv[1]);
     block_t *linked_list = chunk_memory(filesize);
-    block_t * writtenlist = linked_list_source_file("src/c.c");
+    block_t *writtenlist = linked_list_source_file(argv[1]);
+    block_t *zerothblock = block_by_index(writtenlist, 0);
+    printf("\n%s\n\n", zerothblock->buffer);
     dump_data(writtenlist);
     free_list(linked_list);
     free_list(writtenlist);
