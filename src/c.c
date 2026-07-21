@@ -15,16 +15,21 @@ typedef struct block {
 } block_t;
 
 off_t get_file_size_in_bytes(const i8 *path) {
+    off_t file_length = 0;
     i32 file_descriptor = open(path, O_RDONLY);
-    if (file_descriptor == -1) { perror("open failed"); return -1; }
-    off_t file_length = lseek(file_descriptor, 0, SEEK_END);
+    if (file_descriptor < 0) { goto cleanup; }
+    file_length = lseek(file_descriptor, 0, SEEK_END);
+    if (file_length < 0) { goto cleanup; }
+    cleanup:
     i32 file_close_status = close(file_descriptor);
+    if (file_close_status < 0) { goto cleanup; }
     (void)file_close_status;
     return file_length;
 }
 
 block_t *create_block(void) {
     block_t *block = malloc(sizeof(block_t));
+    if (!block) { goto cleanup; }
     for (u32 i = 0; i < BUFFER_SIZE - 1; i++) {
         *((block->buffer) + i) = 0;
     }
@@ -32,6 +37,8 @@ block_t *create_block(void) {
     block->next = NULL;
     block->previous = NULL;
     block->count = 0;
+    cleanup:
+        free(block);
     return block;
 }
 
@@ -59,7 +66,7 @@ block_t *chunk_memory(u32 byte_count) {
 i32 get_block_count(block_t *list) {
     i32 count = 1;
     block_t *ptr = list;
-    if (!(ptr->next)) { return 1; }
+    if (!(ptr->next)) { return count; }
     while(ptr->next) { count++; ptr = ptr->next; }
     return count;
 }
@@ -75,6 +82,7 @@ block_t *linked_list_source_file(const i8 *path) {
         read(file_descriptor, tail->buffer, BUFFER_SIZE - 1);
         tail = tail->next;
     }
+    close(file_descriptor);
     return block_linked_list;
 }
 
